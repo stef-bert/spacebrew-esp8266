@@ -2,6 +2,7 @@
 #ifndef SPACEBREW_H
 #define SPACEBREW_H
 
+#include <ESP8266WiFi.h>
 #include <WebSocketClient.h>
 #include "Arduino.h"
 
@@ -28,7 +29,7 @@ public:
 	typedef void (*OnStringMessage)(char name[], char value[]);
 	//typedef void (*OnOtherMessage)(char* name, char* value);//duplicate of OnStringMessage
 	typedef void (*OnSBOpen)();
-	typedef void (*OnSBClose)(int code, char message[]);
+	typedef void (*OnSBClose)();
 	typedef void (*OnSBError)(char message[]);
 	void onOpen(OnSBOpen function);
 	void onClose(OnSBClose function);
@@ -91,7 +92,7 @@ public:
 	//void addSubscribe(char* name, SBType type, OnBooleanMessage function);
 	//void addSubscribe(char* name, SBType type, OnRangeMessage function);
 	//void addSubscribe(char* name, SBType type, OnStringMessage function);
-	void connect(char hostname[], char clientName[], char description[], int port = 9000);
+	void connect(WiFiClient* wifiClient, char hostname[], char clientName[], char description[], int port = 9000);
 	void disconnect();
 	bool send(char name[], char type[], char value[]);
 	bool send(char name[], SBType type, char value[]){
@@ -117,14 +118,16 @@ public:
 		send(name, (char*)"boolean", (char*)(value ? "true" : "false"));
 	}
 	bool send(char name[], int value);
-	static void onWSError(WebSocketClient client, char* message);//defined in WebSocketClientCallback
-	static void onWSOpen(WebSocketClient client);
-	static void onWSClose(WebSocketClient client, int code, char* message);
-	static void onWSMessage(WebSocketClient client, char* message);
+
+	static void onWSError(char* message);//defined in WebSocketClientCallback
+	static void onWSOpen();
+	static void onWSClose();
+	static void onWSMessage(char* message);
 
 private:
 	uint8_t mac[6];
-	WebSocketClient client;
+	WiFiClient *client;
+	WebSocketClient webSocketClient;
 	static bool m_bOpen;
 	static bool m_bSendConfig;
 	char* m_sClientName;
