@@ -28,9 +28,11 @@ public:
 	typedef void (*OnRangeMessage)(char name[], int value);
 	typedef void (*OnStringMessage)(char name[], char value[]);
 	//typedef void (*OnOtherMessage)(char* name, char* value);//duplicate of OnStringMessage
+
 	typedef void (*OnSBOpen)();
 	typedef void (*OnSBClose)();
 	typedef void (*OnSBError)(char message[]);
+
 	void onOpen(OnSBOpen function);
 	void onClose(OnSBClose function);
 	void onRangeMessage(OnRangeMessage function);
@@ -38,6 +40,7 @@ public:
 	void onBooleanMessage(OnBooleanMessage function);
 	void onOtherMessage(OnStringMessage function);
 	void onError(OnSBError function);
+
 	void addPublish(char name[], char type[], char defaultValue[]);
 	void addPublish(char name[], bool defaultValue){
 		addPublish(name, (char*)"boolean", (char*)(defaultValue ? "true" : "false"));
@@ -92,6 +95,7 @@ public:
 	//void addSubscribe(char* name, SBType type, OnBooleanMessage function);
 	//void addSubscribe(char* name, SBType type, OnRangeMessage function);
 	//void addSubscribe(char* name, SBType type, OnStringMessage function);
+
 	void connect(WiFiClient* wifiClient, char hostname[], char clientName[], char description[], int port = 9000);
 	void disconnect();
 	bool send(char name[], char type[], char value[]);
@@ -125,15 +129,30 @@ public:
 	static void onWSMessage(char* message);
 
 private:
-	uint8_t mac[6];
-	WiFiClient *client;
-	WebSocketClient webSocketClient;
-	static bool m_bOpen;
-	static bool m_bSendConfig;
+	WiFiClient* m_wifiClient;
+	WebSocketClient m_webSocketClient;
+
 	char* m_sClientName;
 	char* m_sDescription;
+	char* m_hostname;
+	int   m_port;
+
 	void sendConfig();
 	void onInternalError(char* message);
+
+	static bool m_bOpen;
+	static bool m_bSendConfig;
+	static OnBooleanMessage _onBooleanMessage;
+	static OnRangeMessage _onRangeMessage;
+	static OnStringMessage _onStringMessage;
+	static OnStringMessage _onOtherMessage;
+	static OnSBOpen _onOpen;
+	static OnSBClose _onClose;
+	static OnSBError _onError;
+
+	PublisherNode *publishers;
+	SubscriberNode *subscribers;
+
 	/**Output should be at least 5 cells**/
 	static void intToString(int input, char* output){
 		char val[4] = {input/1000%10+'0', input/100%10+'0', input/10%10+'0', input%10+'0'};
@@ -156,15 +175,7 @@ private:
 		}
 		return output;
 	}
-	static OnBooleanMessage _onBooleanMessage;
-	static OnRangeMessage _onRangeMessage;
-	static OnStringMessage _onStringMessage;
-	static OnStringMessage _onOtherMessage;
-	static OnSBOpen _onOpen;
-	static OnSBClose _onClose;
-	static OnSBError _onError;
-	PublisherNode *publishers;
-	SubscriberNode *subscribers;
+
 	static char *cloneString(char *s){
 		int n = strlen(s);
 		char *out = (char *)malloc(n+1);//new char[n];

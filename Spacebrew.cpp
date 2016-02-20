@@ -1,10 +1,5 @@
 #include "Spacebrew.h"
 
-
-Spacebrew::Spacebrew(){
-	m_bOpen = m_bSendConfig = false;
-}
-
 bool Spacebrew::m_bOpen = false;
 bool Spacebrew::m_bSendConfig = false;
 Spacebrew::OnBooleanMessage Spacebrew::_onBooleanMessage = NULL;
@@ -15,25 +10,8 @@ Spacebrew::OnSBOpen Spacebrew::_onOpen = NULL;
 Spacebrew::OnSBClose Spacebrew::_onClose = NULL;
 Spacebrew::OnSBError Spacebrew::_onError = NULL;
 
-void Spacebrew::onWSError(char* message){
-	if (_onError != NULL){
-		_onError(message);
-	}
-}
-
-void Spacebrew::onWSOpen(){
-	m_bOpen = true;
-	m_bSendConfig = true;
-	if (_onOpen != NULL){
-		_onOpen();
-	}
-}
-
-void Spacebrew::onWSClose(){
-	m_bOpen = false;
-	if (_onClose != NULL){
-		_onClose();
-	}
+Spacebrew::Spacebrew(){
+	m_bOpen = m_bSendConfig = false;
 }
 
 void Spacebrew::sendConfig(){
@@ -94,13 +72,16 @@ void Spacebrew::sendConfig(){
 		}
 	}
 	strcat(b, c9);
-	webSocketClient.sendData(b);
+	m_webSocketClient.sendData(b);
 }
 
 void Spacebrew::connect(WiFiClient* wifiClient, char hostname[], char* clientName, char* description, int port){
+	m_wifiClient = wifiClient;
+	m_hostname = hostname;
+	m_port = port;
+
 	// WiFi connection
-	client = wifiClient;
-	if (client->connect(hostname, port)) {
+	if (m_wifiClient->connect(hostname, port)) {
 		Serial.println("WiFi connected");;
 	} else {
 		Serial.println("WiFi failed to connect");;
@@ -108,10 +89,10 @@ void Spacebrew::connect(WiFiClient* wifiClient, char hostname[], char* clientNam
 	}
 
 	// Websocket handshake
-	webSocketClient.path = "/";
-	webSocketClient.host = hostname;
+	m_webSocketClient.path = "/";
+	m_webSocketClient.host = hostname;
 
-	if (webSocketClient.handshake(*client)) {
+	if (m_webSocketClient.handshake(*m_wifiClient)) {
 		Serial.println("Websocket handshake successful");
 		m_sClientName = clientName;
 		m_sDescription = description;
@@ -124,27 +105,6 @@ void Spacebrew::connect(WiFiClient* wifiClient, char hostname[], char* clientNam
 	}
 }
 
-void Spacebrew::onOpen(OnSBOpen function){
-	_onOpen = function;
-}
-void Spacebrew::onClose(OnSBClose function){
-	_onClose = function;
-}
-void Spacebrew::onRangeMessage(OnRangeMessage function){
-	_onRangeMessage = function;
-}
-void Spacebrew::onStringMessage(OnStringMessage function){
-	_onStringMessage = function;
-}
-void Spacebrew::onBooleanMessage(OnBooleanMessage function){
-	_onBooleanMessage = function;
-}
-void Spacebrew::onOtherMessage(OnStringMessage function){
-	_onOtherMessage = function;
-}
-void Spacebrew::onError(OnSBError function){
-	_onError = function;
-}
 void Spacebrew::addPublish(char* name, char* type, char* defaultValue){
 	PublisherNode *p = new PublisherNode();
 	p->name = cloneString(name);
@@ -180,8 +140,7 @@ void Spacebrew::addSubscribe(char* name, char* type){
 	}
 }
 void Spacebrew::disconnect(){
-	// client.disconnect();
-	m_bOpen = false;
+	onWSClose();
 }
 
 void Spacebrew::onWSMessage(char* message){
@@ -224,6 +183,7 @@ void Spacebrew::onWSMessage(char* message){
 	}
 }
 bool Spacebrew::send(char *name, char *type, char *value){
+	unsigned long begin = millis();
 	const char *m1 = "{\"message\":{\"clientName\":\"",
 	*m2 = "\",\"name\":\"",
 	*m3 = "\",\"type\":\"",
@@ -240,7 +200,15 @@ bool Spacebrew::send(char *name, char *type, char *value){
 	strcat(b, m4);
 	strcat(b, value);
 	strcat(b, m5);
-	webSocketClient.sendData(b);
+	unsigned long end = millis();
+	m_webSocketClient.sendData(b);
+	unsigned long after = millis();
+	int stringTime = end - begin;
+	int sendTime = after - end;
+	Serial.print("Send: string time ");
+	Serial.print(stringTime);
+	Serial.print(", send time ");
+	Serial.println(sendTime);
 }
 bool Spacebrew::send(char* name, int value){
 	char sVal[5];
@@ -253,20 +221,23 @@ void Spacebrew::onInternalError(char *message){
 	}
 }
 void Spacebrew::monitor(){
-	if (!client->connected()) {
-		onWSClose();
+	if (!m_bOpen){
 		return;
 	}
 
-	if (m_bOpen){
-		if (m_bSendConfig){
-			m_bSendConfig = false;
-			sendConfig();
-		}
+	if (!m_wifiClient->connected()) {
+		onWSClose();
+		connect(m_wifiClient, m_hostname, m_sClientName, m_sDescription, m_port);
+		return;
+	}
+
+	if (m_bSendConfig){
+		m_bSendConfig = false;
+		sendConfig();
 	}
 
 	String data;
-	webSocketClient.getData(data);
+	m_webSocketClient.getData(data);
 	if (data.length() > 0) {
 		Serial.println("recv: " + data);
 		if (data == "ping") {
@@ -275,4 +246,47 @@ void Spacebrew::monitor(){
 			onWSMessage((char*) data.c_str());
 		}
 	}
+}
+
+void Spacebrew::onWSOpen(){
+	m_bOpen = true;
+	m_bSendConfig = true;
+	if (_onOpen != NULL){
+		_onOpen();
+	}
+}
+
+void Spacebrew::onWSClose(){
+	m_bOpen = false;
+	if (_onClose != NULL){
+		_onClose();
+	}
+}
+
+void Spacebrew::onWSError(char* message){
+	if (_onError != NULL){
+		_onError(message);
+	}
+}
+
+void Spacebrew::onOpen(OnSBOpen function){
+	_onOpen = function;
+}
+void Spacebrew::onClose(OnSBClose function){
+	_onClose = function;
+}
+void Spacebrew::onRangeMessage(OnRangeMessage function){
+	_onRangeMessage = function;
+}
+void Spacebrew::onStringMessage(OnStringMessage function){
+	_onStringMessage = function;
+}
+void Spacebrew::onBooleanMessage(OnBooleanMessage function){
+	_onBooleanMessage = function;
+}
+void Spacebrew::onOtherMessage(OnStringMessage function){
+	_onOtherMessage = function;
+}
+void Spacebrew::onError(OnSBError function){
+	_onError = function;
 }
