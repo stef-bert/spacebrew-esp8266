@@ -1,12 +1,17 @@
-
 #ifndef SPACEBREW_H
 #define SPACEBREW_H
 
+#include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include <WebSocketClient.h>
-#include "Arduino.h"
+#include <ESP8266WiFiMulti.h>
+#include <WebSocketsClient.h>
+#include <Hash.h>
 
-enum SBType { SB_BOOLEAN, SB_STRING, SB_RANGE };
+enum SBType {
+	SB_BOOLEAN,
+	SB_STRING,
+	SB_RANGE
+};
 struct PublisherNode {
 	char *name;
 	char *type;
@@ -96,7 +101,7 @@ public:
 	//void addSubscribe(char* name, SBType type, OnRangeMessage function);
 	//void addSubscribe(char* name, SBType type, OnStringMessage function);
 
-	void connect(WiFiClient* wifiClient, char hostname[], char clientName[], char description[], int port = 9000);
+	void connect(char hostname[], char clientName[], char description[], int port = 9000);
 	void disconnect();
 	bool send(char name[], char type[], char value[]);
 	bool send(char name[], SBType type, char value[]){
@@ -127,10 +132,10 @@ public:
 	static void onWSOpen();
 	static void onWSClose();
 	static void onWSMessage(char* message);
+	static void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
 
 private:
-	WiFiClient* m_wifiClient;
-	WebSocketClient m_webSocketClient;
+	WebSocketsClient m_webSocketClient;
 
 	char* m_sClientName;
 	char* m_sDescription;
