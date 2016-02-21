@@ -136,19 +136,20 @@ void Spacebrew::sendConfig(){
 
 void Spacebrew::webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     switch(type) {
+	switch(type) {
 		case WStype_CONNECTED:
 			onWSOpen();
 			break;
 		case WStype_DISCONNECTED:
-            onWSClose();
-            break;
-        case WStype_TEXT:
+			onWSClose();
+			break;
+		case WStype_TEXT:
 			onWSMessage((char*) payload);
-            break;
-        case WStype_ERROR:
+			break;
+		case WStype_ERROR:
 			onWSError((char*) payload);
-            break;
-    }
+			break;
+	}
 }
 
 void Spacebrew::onWSOpen(){
