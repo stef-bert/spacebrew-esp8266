@@ -32,7 +32,6 @@ public:
 	typedef void (*OnBooleanMessage)(char name[], bool value);
 	typedef void (*OnRangeMessage)(char name[], int value);
 	typedef void (*OnStringMessage)(char name[], char value[]);
-	//typedef void (*OnOtherMessage)(char* name, char* value);//duplicate of OnStringMessage
 
 	typedef void (*OnSBOpen)();
 	typedef void (*OnSBClose)();
@@ -94,15 +93,10 @@ public:
 				break;
 		}
 	}
-	//void addSubscribe(char* name, char* type, OnBooleanMessage function);
-	//void addSubscribe(char* name, char* type, OnRangeMessage function);
-	//void addSubscribe(char* name, char* type, OnStringMessage function);//also used for OnOtherMessage
-	//void addSubscribe(char* name, SBType type, OnBooleanMessage function);
-	//void addSubscribe(char* name, SBType type, OnRangeMessage function);
-	//void addSubscribe(char* name, SBType type, OnStringMessage function);
 
 	void connect(char hostname[], char clientName[], char description[], int port = 9000);
 	void disconnect();
+
 	bool send(char name[], char type[], char value[]);
 	bool send(char name[], SBType type, char value[]){
 		switch(type){
@@ -143,7 +137,6 @@ private:
 	int   m_port;
 
 	void sendConfig();
-	void onInternalError(char* message);
 
 	static bool m_bOpen;
 	static bool m_bSendConfig;
