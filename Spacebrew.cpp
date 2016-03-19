@@ -66,7 +66,8 @@ void Spacebrew::connect(char hostname[], char* clientName, char* description, in
 	Serial.println("...");
 
 	m_webSocketClient.begin(hostname, port);
-	m_webSocketClient.onEvent(webSocketEvent);
+	m_webSocketClient.onEvent(std::bind(&Spacebrew::webSocketEvent, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
 }
 
 void Spacebrew::disconnect(){
@@ -74,6 +75,14 @@ void Spacebrew::disconnect(){
 }
 
 void Spacebrew::sendConfig(){
+
+	StaticJsonBuffer<1024> jsonBuffer;
+
+	JsonObject& root = jsonBuffer.createObject();
+	JsonObject& config = root.createNestedObject("config");
+	config["name"] = m_sClientName;
+	config["description"] = m_sDescription;
+
 	const char *c1 = "{\"config\":{\"name\":\"",
 	*c2 = "\",\"description\":\"",
 	*c3 = "\",\"publish\":{\"messages\":[",
@@ -135,7 +144,6 @@ void Spacebrew::sendConfig(){
 }
 
 void Spacebrew::webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
-    switch(type) {
 	switch(type) {
 		case WStype_CONNECTED:
 			onWSOpen();
@@ -178,6 +186,8 @@ void Spacebrew::onWSError(char* message){
 }
 
 void Spacebrew::onWSMessage(char* message){
+//	JsonObject& root = jsonBuffer.parseObject(message);
+
 	const char *i1 = "{\"message\":{\"name\":\"",
 	*i2 = "\",\"type\":\"",
 	*i3 = "\",\"value\":\"";

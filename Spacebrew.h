@@ -2,6 +2,7 @@
 #define SPACEBREW_H
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <WebSocketsClient.h>
@@ -122,11 +123,11 @@ public:
 	}
 	bool send(char name[], int value);
 
-	static void onWSError(char* message);//defined in WebSocketClientCallback
-	static void onWSOpen();
-	static void onWSClose();
-	static void onWSMessage(char* message);
-	static void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
+	void onWSError(char* message);//defined in WebSocketClientCallback
+	void onWSOpen();
+	void onWSClose();
+	void onWSMessage(char* message);
+	void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
 
 private:
 	WebSocketsClient m_webSocketClient;
