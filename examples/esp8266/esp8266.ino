@@ -13,18 +13,18 @@ char description[] = "";
 ESP8266WiFiMulti wifi;
 Spacebrew sb;
 
-// Update sine wave 10 times per second
-unsigned int  waveUpdateRate = 1000.0 / 10.0;
+// Update sine wave 3 times per second
+unsigned int  waveUpdateRate = 1000.0 / 3.;
 unsigned long waveTimer;
 
 // Declare handlers for various Spacebrew events
 // These get defined below!
 void onOpen();
 void onClose();
-void onError(char* message);
-void onBooleanMessage(char *name, bool value);
-void onStringMessage(char *name, char* message);
-void onRangeMessage(char *name, int value);
+void onError(const char* message);
+void onBooleanMessage(const char *name, bool value);
+void onStringMessage(const char *name, const char* message);
+void onRangeMessage(const char *name, int value);
 
 void setup() {
   Serial.begin(115200);
@@ -97,9 +97,11 @@ void loop() {
 
     sb.send("Sine Wave", (int) sine);
   }
+
+  delay(1);
 }
 
-void onBooleanMessage(char *name, bool value) {
+void onBooleanMessage(const char *name, bool value) {
   Serial.print("bool: ");
   Serial.print(name);
   Serial.print(" :: ");
@@ -119,7 +121,7 @@ void onBooleanMessage(char *name, bool value) {
   }
 }
 
-void onStringMessage(char *name, char* message) {
+void onStringMessage(const char *name, const char* message) {
   Serial.print("string: ");
   Serial.print(name);
   Serial.print(" :: ");
@@ -131,7 +133,7 @@ void onStringMessage(char *name, char* message) {
   }
 }
 
-void onRangeMessage(char *name, int value) {
+void onRangeMessage(const char *name, int value) {
   Serial.print("range: ");
   Serial.print(name);
   Serial.print(" :: ");
@@ -145,12 +147,12 @@ void onRangeMessage(char *name, int value) {
 
 void onOpen() {
   //send a message when we get connected!
-  sb.send("Parrot String", "Hello Spacebrew");
+  //sb.send("Parrot String", "Hello Spacebrew");
 }
 
 void onClose() {
 
 }
 
-void onError(char* message) {
+void onError(const char* message) {
 }

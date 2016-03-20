@@ -105,10 +105,10 @@ void Spacebrew::webSocketEvent(WStype_t type, uint8_t * payload, size_t length) 
 			onWSClose();
 			break;
 		case WStype_TEXT:
-			onWSMessage((char*) payload);
+			onWSMessage((const char*) payload);
 			break;
 		case WStype_ERROR:
-			onWSError((char*) payload);
+			onWSError((const char*) payload);
 			break;
 	}
 }
@@ -132,13 +132,13 @@ void Spacebrew::onWSClose(){
 	}
 }
 
-void Spacebrew::onWSError(char* message){
+void Spacebrew::onWSError(const char* message){
 	if (_onError != NULL){
 		_onError(message);
 	}
 }
 
-void Spacebrew::onWSMessage(char* message){
+void Spacebrew::onWSMessage(const char* message){
 	StaticJsonBuffer<1024> jsonBuffer;
 	JsonObject& root = jsonBuffer.parseObject(message);
 
@@ -147,21 +147,17 @@ void Spacebrew::onWSMessage(char* message){
 		return;
 	}
 
-	// This is pretty dumb
-	// ArduinoJson requires const char* when grabbing strings
-	// strcmp is being a b about const char*/char* comparison and casting
-	// between the two. So just make a dupe :(
-	const char* nameConst = root["message"]["name"];
-	const char* typeConst = root["message"]["type"];
-	const char* valueConst = root["message"]["value"];
+	const char* name = root["message"]["name"];
+	const char* type = root["message"]["type"];
+	const char* value = root["message"]["value"];
 
-	char* name = (char*) nameConst;
-	char* type = (char*) typeConst;
-	char* value = (char*) valueConst;
+	Serial.println(name);
+	Serial.println(type);
+	Serial.println(value);
 
 	if (strcmp((char*) type, "boolean") == 0){
 		if (_onBooleanMessage != NULL){
-			_onBooleanMessage(name, strcmp(value, "true") == 0);
+			_onBooleanMessage(name, strcmp(value, (const char*) "true") == 0);
 		}
 	} else if (strcmp(type, "string") == 0){
 		if (_onStringMessage != NULL){
@@ -169,7 +165,7 @@ void Spacebrew::onWSMessage(char* message){
 		}
 	} else if (strcmp(type, "range") == 0){
 		if (_onRangeMessage != NULL){
-			_onRangeMessage(name, stringToInt(value));
+			_onRangeMessage(name, stringToInt((char*) value));
 		}
 	} else {
 		if (_onOtherMessage != NULL){

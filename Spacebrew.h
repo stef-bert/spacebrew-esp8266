@@ -30,13 +30,13 @@ class Spacebrew{
 public:
 	Spacebrew();
 	void monitor();
-	typedef void (*OnBooleanMessage)(char name[], bool value);
-	typedef void (*OnRangeMessage)(char name[], int value);
-	typedef void (*OnStringMessage)(char name[], char value[]);
+	typedef void (*OnBooleanMessage)(const char* name, bool value);
+	typedef void (*OnRangeMessage)(const char* name, int value);
+	typedef void (*OnStringMessage)(const char* name, const char* value);
 
 	typedef void (*OnSBOpen)();
 	typedef void (*OnSBClose)();
-	typedef void (*OnSBError)(char message[]);
+	typedef void (*OnSBError)(const char* message);
 
 	void onOpen(OnSBOpen function);
 	void onClose(OnSBClose function);
@@ -123,10 +123,10 @@ public:
 	}
 	bool send(char name[], int value);
 
-	void onWSError(char* message);//defined in WebSocketClientCallback
+	void onWSError(const char* message);//defined in WebSocketClientCallback
 	void onWSOpen();
 	void onWSClose();
-	void onWSMessage(char* message);
+	void onWSMessage(const char* message);
 	void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
 
 private:
