@@ -61,7 +61,8 @@ void Spacebrew::disconnect(){
 }
 
 void Spacebrew::sendConfig(){
-	StaticJsonBuffer<1024> jsonBuffer;
+//	StaticJsonBuffer<1024> jsonBuffer;
+	DynamicJsonBuffer jsonBuffer;
 
 	// Create root object
 	JsonObject& root = jsonBuffer.createObject();
@@ -92,6 +93,9 @@ void Spacebrew::sendConfig(){
 
 	char buffer[1024];
 	root.printTo(buffer, sizeof(buffer));
+
+	Serial.print("send: ");
+	Serial.println(buffer);
 	m_webSocketClient.sendTXT(buffer);
 
 }
@@ -117,6 +121,7 @@ void Spacebrew::onWSOpen(){
 	m_bOpen = true;
 	m_bSendConfig = true;
 	Serial.println("[Spacebrew] Connected! ");
+
 	if (_onOpen != NULL){
 		_onOpen();
 	}
@@ -126,6 +131,7 @@ void Spacebrew::onWSClose(){
 	if (m_bOpen) {
 		m_bOpen = false;
 		Serial.println("[Spacebrew] Disconnected! ");
+
 		if (_onClose != NULL){
 			_onClose();
 		}
@@ -133,13 +139,20 @@ void Spacebrew::onWSClose(){
 }
 
 void Spacebrew::onWSError(const char* message){
+	Serial.print("[Spacebrew] Error! ");
+	Serial.println(message);
+
 	if (_onError != NULL){
 		_onError(message);
 	}
 }
 
 void Spacebrew::onWSMessage(const char* message){
-	StaticJsonBuffer<1024> jsonBuffer;
+	Serial.print("recv: ");
+	Serial.println(message);
+
+//	StaticJsonBuffer<1024> jsonBuffer;
+	DynamicJsonBuffer jsonBuffer;
 	JsonObject& root = jsonBuffer.parseObject(message);
 
 	if (!root.success()) {
@@ -151,9 +164,9 @@ void Spacebrew::onWSMessage(const char* message){
 	const char* type = root["message"]["type"];
 	const char* value = root["message"]["value"];
 
-	Serial.println(name);
-	Serial.println(type);
-	Serial.println(value);
+//	Serial.println(name);
+//	Serial.println(type);
+//	Serial.println(value);
 
 	if (strcmp((char*) type, "boolean") == 0){
 		if (_onBooleanMessage != NULL){
@@ -181,7 +194,8 @@ bool Spacebrew::send(char* name, int value){
 }
 
 bool Spacebrew::send(char *name, char *type, char *value){
-	StaticJsonBuffer<1024> jsonBuffer;
+//	StaticJsonBuffer<1024> jsonBuffer;
+	DynamicJsonBuffer jsonBuffer;
 
 	// Create root object
 	JsonObject& root = jsonBuffer.createObject();
@@ -193,6 +207,9 @@ bool Spacebrew::send(char *name, char *type, char *value){
 
 	char buffer[1024];
 	root.printTo(buffer, sizeof(buffer));
+
+	Serial.print("send: ");
+	Serial.println(buffer);
 	m_webSocketClient.sendTXT(buffer);
 }
 

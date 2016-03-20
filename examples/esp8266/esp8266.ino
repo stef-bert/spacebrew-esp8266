@@ -58,6 +58,10 @@ void setup() {
   sb.onStringMessage(onStringMessage);
   sb.onRangeMessage(onRangeMessage);
 
+//  sb.onBooleanMessage(std::bind(&onBooleanMessage, std::placeholders::_1, std::placeholders::_2));
+//  sb.onStringMessage(std::bind(&onStringMessage, std::placeholders::_1, std::placeholders::_2));
+//  sb.onRangeMessage(std::bind(&onRangeMessage, std::placeholders::_1, std::placeholders::_2));
+
   // Register publishers and subscribers
 
   // Messages received on the Parrot subscribers will be
@@ -155,4 +159,6 @@ void onClose() {
 }
 
 void onError(const char* message) {
+  Serial.print("Received error! ");
+  Serial.println(message);
 }

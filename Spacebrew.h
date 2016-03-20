@@ -34,6 +34,10 @@ public:
 	typedef void (*OnRangeMessage)(const char* name, int value);
 	typedef void (*OnStringMessage)(const char* name, const char* value);
 
+//	typedef std::function<void(const char* name, bool value)> OnBooleanMessage;
+//	typedef std::function<void(const char* name, int value)> OnRangeMessage;
+//	typedef std::function<void(const char* name, const char* value)> OnStringMessage;
+
 	typedef void (*OnSBOpen)();
 	typedef void (*OnSBClose)();
 	typedef void (*OnSBError)(const char* message);
