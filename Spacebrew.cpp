@@ -139,28 +139,27 @@ void Spacebrew::onWSError(char* message){
 }
 
 void Spacebrew::onWSMessage(char* message){
-//	JsonObject& root = jsonBuffer.parseObject(message);
+	StaticJsonBuffer<1024> jsonBuffer;
+	JsonObject& root = jsonBuffer.parseObject(message);
 
-	const char *i1 = "{\"message\":{\"name\":\"",
-	*i2 = "\",\"type\":\"",
-	*i3 = "\",\"value\":\"";
-	char *name, *type, *value;
-	name = message + strlen(i1);
-	message = strchr(name, '"');
-	*message = NULL;
-	type = message + strlen(i2);
-	message = strchr(type, '"');
-	*message = NULL;
-	value = message + strlen(i3);
-	if (*(value - 1) == '"'){
-		message = strchr(value, '"');
-	} else {
-		value--;
-		message--;
-		message = strchr(value, '}');
+	if (!root.success()) {
+		Serial.println("[Spacebrew] invalid json message!");
+		return;
 	}
-	*message = NULL;
-	if (strcmp(type, "boolean") == 0){
+
+	// This is pretty dumb
+	// ArduinoJson requires const char* when grabbing strings
+	// strcmp is being a b about const char*/char* comparison and casting
+	// between the two. So just make a dupe :(
+	const char* nameConst = root["message"]["name"];
+	const char* typeConst = root["message"]["type"];
+	const char* valueConst = root["message"]["value"];
+
+	char* name = (char*) nameConst;
+	char* type = (char*) typeConst;
+	char* value = (char*) valueConst;
+
+	if (strcmp((char*) type, "boolean") == 0){
 		if (_onBooleanMessage != NULL){
 			_onBooleanMessage(name, strcmp(value, "true") == 0);
 		}
@@ -186,24 +185,19 @@ bool Spacebrew::send(char* name, int value){
 }
 
 bool Spacebrew::send(char *name, char *type, char *value){
-	const char *m1 = "{\"message\":{\"clientName\":\"",
-	*m2 = "\",\"name\":\"",
-	*m3 = "\",\"type\":\"",
-	*m4 = "\",\"value\":\"",
-	*m5 = "\"}}";
-	int len = strlen(m1)+strlen(m2)+strlen(m3)+strlen(m4)+strlen(m5)+strlen(m_sClientName)+strlen(name)+strlen(type)+strlen(value);
-	char b[len+1];
-	strcpy(b, m1);
-	strcat(b, m_sClientName);
-	strcat(b, m2);
-	strcat(b, name);
-	strcat(b, m3);
-	strcat(b, type);
-	strcat(b, m4);
-	strcat(b, value);
-	strcat(b, m5);
+	StaticJsonBuffer<1024> jsonBuffer;
 
-	m_webSocketClient.sendTXT(b);
+	// Create root object
+	JsonObject& root = jsonBuffer.createObject();
+	JsonObject& message = root.createNestedObject("message");
+	message["clientName"] = m_sClientName;
+	message["name"] = name;
+	message["type"] = type;
+	message["value"] = value;
+
+	char buffer[1024];
+	root.printTo(buffer, sizeof(buffer));
+	m_webSocketClient.sendTXT(buffer);
 }
 
 void Spacebrew::monitor(){
