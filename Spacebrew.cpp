@@ -17,19 +17,13 @@ Spacebrew::Spacebrew(){
 }
 
 void Spacebrew::addPublish(char* name, char* type, char* defaultValue){
-	PublisherNode *p = new PublisherNode();
+	auto* p = new PublisherNode();
+
 	p->name = cloneString(name);
 	p->type = cloneString(type);
 	p->defaultValue = cloneString(defaultValue);
-	if (publishers == NULL){
-		publishers = p;
-	} else {
-		PublisherNode *curr = publishers;
-		while(curr->next != NULL){
-			curr = curr->next;
-		}
-		curr->next = p;
-	}
+
+	publishers.push_back(p);
 }
 
 void Spacebrew::addPublish(char* name, int defaultValue){
@@ -42,15 +36,7 @@ void Spacebrew::addSubscribe(char* name, char* type){
 	SubscriberNode *s = new SubscriberNode();
 	s->name = cloneString(name);
 	s->type = cloneString(type);
-	if (subscribers == NULL){
-		subscribers = s;
-	} else {
-		SubscriberNode *curr = subscribers;
-		while(curr->next != NULL){
-			curr = curr->next;
-		}
-		curr->next = s;
-	}
+	subscribers.push_back(s);
 }
 
 void Spacebrew::connect(char hostname[], char* clientName, char* description, int port){
@@ -75,72 +61,39 @@ void Spacebrew::disconnect(){
 }
 
 void Spacebrew::sendConfig(){
-
 	StaticJsonBuffer<1024> jsonBuffer;
 
+	// Create root object
 	JsonObject& root = jsonBuffer.createObject();
 	JsonObject& config = root.createNestedObject("config");
 	config["name"] = m_sClientName;
 	config["description"] = m_sDescription;
 
-	const char *c1 = "{\"config\":{\"name\":\"",
-	*c2 = "\",\"description\":\"",
-	*c3 = "\",\"publish\":{\"messages\":[",
-	*c4 = "{\"name\":\"",
-	*c5 = "\",\"type\":\"",
-	*c6 = "\"}",
-	*c7 = ",",
-	*c8 = "]},\"subscribe\":{\"messages\":[",
-	*c9 = "]}}}",
-	*c10 = "\",\"default\":\"";
-	int len = strlen(c1)+strlen(c2)+strlen(c3)+strlen(c8)+strlen(c9)+strlen(m_sClientName)+strlen(m_sDescription);
+	// Create object for publishers
+	JsonObject& publish = config.createNestedObject("publish");
+	JsonArray& publishMessages = publish.createNestedArray("messages");
 
-	PublisherNode *p = publishers;
-	while(p != NULL){
-		len += strlen(c4)+strlen(c5)+strlen(c6)+strlen(c7)+strlen(p->name)+strlen(p->type)+strlen(c10)+strlen(p->defaultValue);
-		p = p->next;
-	}
-	SubscriberNode *s = subscribers;
-	while(s != NULL){
-		len += strlen(c4)+strlen(c5)+strlen(c6)+strlen(c7)+strlen(s->name)+strlen(s->type);
-		s = s->next;
+	for (auto& p : publishers) {
+		JsonObject& node = publishMessages.createNestedObject();
+		node["name"] = p->name;
+		node["type"] = p->type;
+		node["default"] = p->defaultValue;
 	}
 
-	char b[len+1];
-	strcpy(b, c1);
-	strcat(b, m_sClientName);
-	strcat(b, c2);
-	strcat(b, m_sDescription);
-	strcat(b, c3);
-	p = publishers;
-	while(p != NULL){
-		strcat(b, c4);
-		strcat(b, p->name);
-		strcat(b, c5);
-		strcat(b, p->type);
-		strcat(b, c10);
-		strcat(b, p->defaultValue);
-		strcat(b, c6);
-		p = p->next;
-		if (p != NULL){
-			strcat(b, c7);
-		}
+	// Create object for subscribers
+	JsonObject& subscribe = config.createNestedObject("subscribe");
+	JsonArray& subscribeMessages = subscribe.createNestedArray("messages");
+
+	for (auto& s : subscribers) {
+		JsonObject& node = subscribeMessages.createNestedObject();
+		node["name"] = s->name;
+		node["type"] = s->type;
 	}
-	strcat(b, c8);
-	s = subscribers;
-	while(s != NULL){
-		strcat(b, c4);
-		strcat(b, s->name);
-		strcat(b, c5);
-		strcat(b, s->type);
-		strcat(b, c6);
-		s = s->next;
-		if (s != NULL){
-			strcat(b, c7);
-		}
-	}
-	strcat(b, c9);
-	m_webSocketClient.sendTXT(b);
+
+	char buffer[1024];
+	root.printTo(buffer, sizeof(buffer));
+	m_webSocketClient.sendTXT(buffer);
+
 }
 
 void Spacebrew::webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {

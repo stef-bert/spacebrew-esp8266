@@ -8,6 +8,8 @@
 #include <WebSocketsClient.h>
 #include <Hash.h>
 
+#include <vector>
+
 enum SBType {
 	SB_BOOLEAN,
 	SB_STRING,
@@ -17,12 +19,10 @@ struct PublisherNode {
 	char *name;
 	char *type;
 	char *defaultValue;
-	PublisherNode *next;
 };
 struct SubscriberNode{
 	char *name;
 	char *type;
-	SubscriberNode *next;
 };
 
 class Spacebrew{
@@ -149,8 +149,8 @@ private:
 	static OnSBClose _onClose;
 	static OnSBError _onError;
 
-	PublisherNode *publishers;
-	SubscriberNode *subscribers;
+	std::vector<PublisherNode*> publishers;
+	std::vector<SubscriberNode*> subscribers;
 
 	/**Output should be at least 5 cells**/
 	static void intToString(int input, char* output){
